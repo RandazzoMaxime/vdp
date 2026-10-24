@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Phantom Display</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&family=Rubik:wght@400;500;600&display=swap">
+<style>
+:root{color-scheme:light;
+  --bg:#f3f4f1;--fg:#111;--fg2:#585959;--acc:#03a132;--acc-t:#027a26;--tint:rgba(3,161,50,.10);
+  --glass:rgba(255,255,255,.58);--edge:rgba(255,255,255,.75);--line:rgba(0,0,0,.08);--field:rgba(0,0,0,.04);
+  --shadow:0 18px 44px -22px rgba(30,40,30,.35);--alert:#c23d08;--wait:#946c00;--info:#1f6f9e;--on-acc:#fff;--contour:rgba(17,17,17,.07)}
+:root[data-hx="dark"]{color-scheme:dark;
+  --bg:#0d0e10;--fg:#fff;--fg2:#8c8e96;--acc:#05ed49;--acc-t:#4dff7e;--tint:rgba(5,237,73,.12);
+  --glass:rgba(25,27,30,.60);--edge:rgba(255,255,255,.10);--line:rgba(255,255,255,.08);--field:rgba(255,255,255,.05);
+  --shadow:0 18px 44px -22px rgba(0,0,0,.7);--on-acc:#06241a;--contour:rgba(255,255,255,.06)}
+*{box-sizing:border-box;margin:0}
+html,body{min-height:100%}
+body{font:400 14px/1.5 Manrope,system-ui,"Segoe UI",sans-serif;color:var(--fg);background:var(--bg);overflow-x:hidden;
+  background-image:radial-gradient(520px 380px at 12% 8%,var(--tint),transparent 70%),radial-gradient(480px 420px at 95% 55%,var(--tint),transparent 70%)}
+.contours{position:fixed;inset:0;z-index:-1;width:100%;height:100%}
+.contours ellipse{fill:none;stroke:var(--contour);stroke-width:1}
+main{max-width:520px;margin:0 auto;padding:20px 16px 28px;display:grid;gap:14px}
+h1,h2,.mono,button,.seg label,.pill{font-family:Rubik,system-ui,"Segoe UI",sans-serif}
+header{display:flex;align-items:center;gap:12px}
+header .logo{width:36px;height:36px;border-radius:10px;background:#111214;display:grid;place-items:center}
+header h1{font-size:20px;font-weight:500;letter-spacing:-.01em}
+header small{display:block;color:var(--fg2);font-size:12px;font-variant-numeric:tabular-nums}
+header .sp{flex:1}
+.card{background:var(--glass);border:1px solid var(--edge);border-radius:16px;box-shadow:var(--shadow);
+  backdrop-filter:blur(24px) saturate(140%);-webkit-backdrop-filter:blur(24px) saturate(140%);padding:16px}
+.card h2{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.card p.hint{color:var(--fg2);font-size:12.5px;margin-bottom:12px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:3px 10px;border-radius:999px;background:var(--field)}
+.pill i{width:8px;height:8px;border-radius:50%;background:currentColor}
+.ok{color:var(--acc-t)}.wait{color:var(--wait)}.alert{color:var(--alert)}.info{color:var(--info)}
+.row{display:flex;align-items:center;gap:10px}
+.screens{display:grid;gap:8px;margin-bottom:12px}
+.screen{display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:var(--field);border:1px solid var(--line)}
+.screen .name{font:500 13px Rubik,sans-serif;min-width:62px}
+.seg{display:flex;flex:1;gap:2px;padding:2px;border-radius:10px;background:var(--line)}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{flex:1;text-align:center;font-size:12.5px;font-weight:500;padding:6px 4px;border-radius:8px;cursor:pointer;color:var(--fg2);white-space:nowrap}
+.seg input:checked+label{background:var(--acc);color:var(--on-acc)}
+.seg input:focus-visible+label{outline:2px solid var(--acc);outline-offset:2px}
+button{font-size:13px;font-weight:500;border:1px solid var(--line);background:var(--field);color:var(--fg);padding:8px 14px;border-radius:10px;cursor:pointer;transition:transform .12s,background .12s}
+button:hover{background:var(--line)}button:active{transform:scale(.97)}
+button:focus-visible,select:focus-visible,.key:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+button.primary{background:var(--acc);color:var(--on-acc);border-color:transparent}
+button.primary:hover{filter:brightness(1.06);background:var(--acc)}
+button.danger{color:var(--alert)}
+button:disabled{opacity:.45;cursor:default;transform:none}
+button.icon{padding:6px 8px;line-height:0}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.key{flex:1;min-height:38px;border-radius:10px;border:1px dashed var(--line);background:var(--field);display:flex;align-items:center;gap:6px;padding:0 12px;cursor:pointer;color:var(--fg2);font-size:13px}
+.key.rec{border-color:var(--acc);color:var(--acc-t)}
+kbd{font:500 12px Rubik,sans-serif;padding:2px 8px;border-radius:6px;background:var(--line);color:var(--fg)}
+select{width:100%;font:500 13px Rubik,sans-serif;padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:var(--field);color:var(--fg)}
+select option{color:#111}
+.msg{font-size:12.5px;margin-top:10px;min-height:18px}
+.theme{display:flex;gap:2px;padding:2px;border-radius:10px;background:var(--line)}
+.theme button{padding:4px 10px;border:0;background:none;color:var(--fg2);font-size:12px}
+.theme button[aria-pressed="true"]{background:var(--glass);color:var(--fg)}
+.hide{display:none!important}
+.num{font-variant-numeric:tabular-nums}
+.busy{position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.25);backdrop-filter:blur(3px);z-index:9}
+.busy .card{display:flex;gap:10px;align-items:center}
+.spin{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--acc);animation:s .9s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+</style>
+</head>
+<body>
+<svg class="contours" aria-hidden="true" preserveAspectRatio="xMidYMid slice" viewBox="0 0 800 1000">
+  <g transform="translate(560 220)"><ellipse rx="60" ry="40" transform="rotate(-20)"/><ellipse rx="110" ry="75" transform="rotate(-20)"/><ellipse rx="170" ry="115" transform="rotate(-20)"/><ellipse rx="240" ry="160" transform="rotate(-20)"/><ellipse rx="320" ry="215" transform="rotate(-20)"/></g>
+  <g transform="translate(150 820)"><ellipse rx="70" ry="45" transform="rotate(15)"/><ellipse rx="130" ry="85" transform="rotate(15)"/><ellipse rx="200" ry="130" transform="rotate(15)"/><ellipse rx="280" ry="180" transform="rotate(15)"/></g>
+</svg>
+
+<main>
+  <header>
+    <div class="logo" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 64 64" fill="none" stroke="#05ed49" stroke-width="5" stroke-linecap="round"><rect x="12" y="14" width="40" height="28" rx="5"/><path d="M32 42v8M21 52h22"/></svg></div>
+    <div><h1>Phantom Display</h1><small id="ver" class="num"></small></div>
+    <div class="sp"></div>
+    <div class="theme" role="group" aria-label="Thème"><button data-t="light" aria-pressed="true">Clair</button><button data-t="dark" aria-pressed="false">Sombre</button></div>
+  </header>
+
+  <section class="card hide" id="setup">
+    <h2>Installation</h2>
+    <p class="hint">Un seul clic : installe le pilote d'écran virtuel (MIT, signé), l'application, le démarrage automatique avec Windows et le raccourci du menu Démarrer.</p>
+    <div class="actions"><button class="primary" id="install">Installer Phantom Display</button></div>
+    <div class="msg" id="setupMsg"></div>
+  </section>
+
+  <div id="app" class="hide" style="display:grid;gap:14px">
+    <section class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:6px">
+        <h2 style="margin:0">Écrans virtuels</h2>
+        <span class="pill" id="status"></span>
+      </div>
+      <p class="hint">Un écran virtuel reste « allumé » pour Windows quand tes écrans physiques sont éteints : les benchs GPU mesurent alors la vraie charge d'affichage.</p>
+      <div class="screens" id="screens"></div>
+      <div class="actions">
+        <button id="add">+ Ajouter un écran</button>
+        <button class="primary" id="apply" disabled>Appliquer</button>
+        <button class="danger" id="off">Tout désactiver</button>
+      </div>
+      <div class="msg" id="msg" role="status"></div>
+    </section>
+
+    <section class="card">
+      <h2>Raccourci « tout désactiver »</h2>
+      <p class="hint">Aucun par défaut. Clique le champ puis appuie sur ta combinaison (au moins un modificateur). Échap pour effacer.</p>
+      <div class="row"><div class="key" id="key" tabindex="0" role="button" aria-label="Définir le raccourci"></div><button id="keySave" disabled>Enregistrer</button></div>
+      <div class="msg" id="keyMsg" role="status"></div>
+    </section>
+
+    <section class="card">
+      <h2>GPU des écrans virtuels</h2>
+      <p class="hint">Carte qui rend les écrans virtuels. Choisis celle que tu benches.</p>
+      <select id="gpu" aria-label="GPU"></select>
+    </section>
+
+    <section class="card">
+      <h2>Mises à jour</h2>
+      <p class="hint" id="upd">Version installée : <span id="ver2" class="num"></span></p>
+      <div class="actions"><button id="check">Rechercher</button><button class="primary hide" id="doUpdate">Mettre à jour</button><button id="quit">Quitter l'application</button></div>
+    </section>
+  </div>
+</main>
+<div class="busy hide" id="busy"><div class="card"><div class="spin"></div><span id="busyTxt">Application en cours…</span></div></div>
+
+<script>
+const TOKEN="{{TOKEN}}";
+const $=s=>document.querySelector(s);
+let S=null, screens=[], gpu="", hotkey="", pendingKey="";
+
+const api=async(p,b={})=>{
+  const r=await fetch("/api/"+p,{method:"POST",headers:{"X-Token":TOKEN,"Content-Type":"application/json"},body:JSON.stringify(b)});
+  const j=await r.json().catch(()=>({error:"réponse invalide"}));
+  if(!r.ok) throw new Error(j.error||r.statusText);
+  return j.data;
+};
+const say=(el,t,cls)=>{el.textContent=t;el.className="msg "+(cls||"")};
+const busy=async(txt,fn)=>{$("#busyTxt").textContent=txt;$("#busy").classList.remove("hide");try{return await fn()}finally{$("#busy").classList.add("hide")}};
+
+// thème : clair par défaut, jamais lu depuis le système
+const setTheme=t=>{document.documentElement.setAttribute("data-hx",t);document.querySelectorAll(".theme button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.t===t));try{localStorage.setItem("hx",t)}catch(e){}};
+document.querySelectorAll(".theme button").forEach(b=>b.onclick=()=>setTheme(b.dataset.t));
+try{setTheme(localStorage.getItem("hx")==="dark"?"dark":"light")}catch(e){setTheme("light")}
+
+const dirty=()=>JSON.stringify(screens)!==JSON.stringify(S.screens)||gpu!==S.gpu;
+
+function render(){
+  $("#ver").textContent=S.version==="dev"?"version de développement":"v"+S.version.replace(/^v/,"");
+  $("#ver2").textContent=S.version;
+  $("#setup").classList.toggle("hide",S.installed&&S.driver);
+  $("#app").classList.toggle("hide",!(S.installed&&S.driver));
+  const st=$("#status");
+  if(S.active>0){st.className="pill ok";st.innerHTML="<i></i>"+S.active+" actif"+(S.active>1?"s":"")}
+  else{st.className="pill wait";st.innerHTML="<i></i>Aucun écran"}
+  const box=$("#screens");box.innerHTML="";
+  screens.forEach((id,i)=>{
+    const el=document.createElement("div");el.className="screen";
+    el.innerHTML=`<span class="name">Écran ${i+1}</span><div class="seg" role="radiogroup" aria-label="Résolution écran ${i+1}">`+
+      S.presets.map(p=>`<span style="flex:1;display:flex"><input type="radio" name="r${i}" id="r${i}${p.id}" value="${p.id}" ${p.id===id?"checked":""}><label for="r${i}${p.id}">${p.label}</label></span>`).join("")+
+      `</div><button class="icon" aria-label="Supprimer l'écran ${i+1}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`;
+    el.querySelectorAll("input").forEach(r=>r.onchange=()=>{screens[i]=r.value;render()});
+    el.querySelector("button").onclick=()=>{screens.splice(i,1);render()};
+    box.appendChild(el);
+  });
+  if(!screens.length){box.innerHTML='<p class="hint" style="margin:0">Aucun écran virtuel.</p>'}
+  $("#add").disabled=screens.length>=4;
+  $("#apply").disabled=!dirty();
+  const g=$("#gpu");g.innerHTML='<option value="">Automatique (choix du pilote)</option>'+S.gpus.map(n=>`<option>${n.replace(/</g,"&lt;")}</option>`).join("");
+  g.value=gpu;
+  const k=$("#key");
+  k.innerHTML=pendingKey||hotkey?(pendingKey||hotkey).split("+").map(x=>`<kbd>${x}</kbd>`).join(""):"Aucun raccourci";
+  $("#keySave").disabled=pendingKey===""||pendingKey===hotkey;
+}
+
+async function load(first){
+  S=await api("state");
+  if(first||!dirty()){screens=[...S.screens];gpu=S.gpu}
+  if(first){hotkey=S.hotkey}
+  render();
+}
+
+$("#add").onclick=()=>{screens.push("1080");render()};
+$("#gpu").onchange=e=>{gpu=e.target.value;render()};
+$("#apply").onclick=async()=>{
+  try{await busy("Application des écrans…",()=>api("apply",{screens,gpu}));say($("#msg"),"Écrans appliqués.","ok");await load(true)}
+  catch(e){say($("#msg"),e.message,"alert")}
+};
+$("#off").onclick=async()=>{
+  try{await busy("Désactivation…",()=>api("deactivate"));say($("#msg"),"Tous les écrans virtuels sont désactivés.","ok");await load(true)}
+  catch(e){say($("#msg"),e.message,"alert")}
+};
+
+// raccourci : capture de la combinaison
+const key=$("#key");
+key.onclick=()=>{key.classList.add("rec");key.textContent="Appuie sur la combinaison…"};
+key.onblur=()=>{key.classList.remove("rec");render()};
+key.onkeydown=e=>{
+  if(!key.classList.contains("rec")){if(e.key==="Enter")key.onclick();return}
+  e.preventDefault();
+  if(e.key==="Escape"||e.key==="Backspace"){pendingKey="";hotkey!==""?savePending(""):0;key.blur();return}
+  if(["Control","Alt","Shift","Meta"].includes(e.key))return;
+  let n=e.code.replace(/^Key|^Digit/,"");
+  const map={ArrowLeft:"Left",ArrowRight:"Right",ArrowUp:"Up",ArrowDown:"Down"};
+  n=map[n]||n;
+  const mods=[e.ctrlKey&&"Ctrl",e.altKey&&"Alt",e.shiftKey&&"Shift",e.metaKey&&"Win"].filter(Boolean);
+  if(!mods.length){say($("#keyMsg"),"Ajoute un modificateur (Ctrl, Alt, Maj ou Win).","wait");return}
+  pendingKey=[...mods,n].join("+");say($("#keyMsg"),"","");key.blur();
+};
+async function savePending(v){
+  try{await api("hotkey",{hotkey:v});hotkey=v;pendingKey="";say($("#keyMsg"),v?"Raccourci enregistré.":"Raccourci effacé.","ok")}
+  catch(e){say($("#keyMsg"),e.message,"alert")}
+  render();
+}
+$("#keySave").onclick=()=>savePending(pendingKey);
+
+$("#install").onclick=async()=>{
+  try{await api("install");say($("#setupMsg"),"Installation en cours… cette fenêtre se rouvrira à la fin.","info")}
+  catch(e){say($("#setupMsg"),e.message,"alert")}
+};
+$("#quit").onclick=()=>api("quit").catch(()=>{});
+
+async function check(){
+  try{
+    const r=await api("update/check");
+    if(r.newer){$("#upd").innerHTML=`Version <b class="num">${r.latest}</b> disponible (installée : <span class="num">${S.version}</span>).`;$("#doUpdate").classList.remove("hide")}
+    else $("#upd").innerHTML=`À jour — <span class="num">${S.version}</span>.`;
+  }catch(e){$("#upd").textContent="Recherche impossible : "+e.message}
+}
+$("#check").onclick=check;
+$("#doUpdate").onclick=async()=>{try{await busy("Téléchargement et installation…",()=>api("update/apply"))}catch(e){$("#upd").textContent=e.message}};
+
+load(true).then(()=>{if(S.installed)check()}).catch(e=>say($("#msg"),e.message,"alert"));
+setInterval(()=>load(false).catch(()=>{}),3000);
+</script>
+</body>
+</html>
