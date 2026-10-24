@@ -1,8 +1,6 @@
 package main
 
 import (
-	"encoding/xml"
-	"strings"
 	"testing"
 	"unsafe"
 )
@@ -22,18 +20,6 @@ func TestHotkey(t *testing.T) {
 	}
 }
 
-func TestSettingsXML(t *testing.T) {
-	x := string(settingsXML(2, `A&B <GPU>`))
-	if err := xml.Unmarshal([]byte(x), new(struct{})); err != nil {
-		t.Fatal(err)
-	}
-	for _, want := range []string{"<count>2</count>", "<width>3440</width>", "<height>2160</height>", "A&amp;B &lt;GPU&gt;"} {
-		if !strings.Contains(x, want) {
-			t.Errorf("manque %s", want)
-		}
-	}
-}
-
 func TestNewer(t *testing.T) {
 	cases := []struct {
 		l, c string
@@ -49,6 +35,9 @@ func TestNewer(t *testing.T) {
 func TestStructSizes(t *testing.T) {
 	if s := unsafe.Sizeof(devMode{}); s != 220 {
 		t.Errorf("DEVMODEW = %d, attendu 220", s)
+	}
+	if s := unsafe.Sizeof(pathInfo{}); s != 72 {
+		t.Errorf("DISPLAYCONFIG_PATH_INFO = %d, attendu 72", s)
 	}
 	if s := unsafe.Sizeof(displayDevice{}); s != 840 {
 		t.Errorf("DISPLAY_DEVICEW = %d, attendu 840", s)

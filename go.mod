@@ -1,4 +1,4 @@
-module github.com/RandazzoMaxime/phantom-display
+module github.com/RandazzoMaxime/vdp
 
 go 1.27.0
 

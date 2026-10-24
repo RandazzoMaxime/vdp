@@ -19,9 +19,9 @@ jobs:
           CGO_ENABLED: "0"
         run: |
           go vet ./...
-          go build -trimpath -ldflags "-s -w -H=windowsgui -X main.version=${GITHUB_REF_NAME#v}" -o phantom-display.exe .
-          sha256sum phantom-display.exe > phantom-display.exe.sha256
+          go build -trimpath -ldflags "-s -w -H=windowsgui -X main.version=${GITHUB_REF_NAME#v}" -o vdp.exe .
+          sha256sum vdp.exe > vdp.exe.sha256
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" phantom-display.exe phantom-display.exe.sha256 --title "$GITHUB_REF_NAME" --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" vdp.exe vdp.exe.sha256 --title "$GITHUB_REF_NAME" --generate-notes

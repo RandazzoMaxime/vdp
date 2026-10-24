@@ -65,7 +65,6 @@ func api(w http.ResponseWriter, r *http.Request) {
 	}
 	var in struct {
 		Screens []string `json:"screens"`
-		GPU     string   `json:"gpu"`
 		Hotkey  string   `json:"hotkey"`
 		Msg     string   `json:"msg"`
 	}
@@ -81,8 +80,8 @@ func api(w http.ResponseWriter, r *http.Request) {
 	case "/api/show":
 		go openUI()
 	case "/api/apply":
-		if err = applyScreens(in.Screens, in.GPU); err == nil {
-			saveConfig(func(c *config) { c.Screens, c.GPU = in.Screens, in.GPU })
+		if err = applyScreens(in.Screens); err == nil {
+			saveConfig(func(c *config) { c.Screens = in.Screens })
 		}
 	case "/api/deactivate":
 		err = deactivateAll()
@@ -133,11 +132,9 @@ func state() map[string]any {
 		"version":   version,
 		"installed": isInstalled(),
 		"driver":    driverPresent(),
-		"active":    len(virtualDisplays()),
+		"active":    activeCount(),
 		"screens":   c.Screens,
 		"hotkey":    c.Hotkey,
-		"gpu":       c.GPU,
-		"gpus":      gpuNames(),
 		"presets":   presets,
 	}
 }

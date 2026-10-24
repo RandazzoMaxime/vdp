@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Phantom Display</title>
+<title>VDP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&family=Rubik:wght@400;500;600&display=swap">
 <style>
@@ -76,7 +76,7 @@ select option{color:#111}
 
 <main>
   <header>
-    <div><h1>Phantom Display</h1><small id="ver" class="num"></small></div>
+    <div><h1>VDP</h1><small id="ver" class="num"></small></div>
     <div class="sp"></div>
     <button class="icon" id="theme" aria-label="Passer en thème sombre" title="Thème">
       <svg class="moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
@@ -86,8 +86,8 @@ select option{color:#111}
 
   <section class="card hide" id="setup">
     <h2>Installation</h2>
-    <p class="hint">Un seul clic : installe le pilote d'écran virtuel (MIT, signé), l'application, le démarrage automatique avec Windows et le raccourci du menu Démarrer.</p>
-    <div class="actions"><button class="primary" id="install">Installer Phantom Display</button></div>
+    <p class="hint">Un seul clic : installe le pilote d'écran virtuel Parsec (téléchargé chez Parsec, signé), l'application, le démarrage automatique avec Windows et le raccourci du menu Démarrer.</p>
+    <div class="actions"><button class="primary" id="install">Installer VDP</button></div>
     <div class="msg" id="setupMsg"></div>
   </section>
 
@@ -115,12 +115,6 @@ select option{color:#111}
     </section>
 
     <section class="card">
-      <h2>GPU des écrans virtuels</h2>
-      <p class="hint">Carte qui rend les écrans virtuels. Choisis celle que tu benches.</p>
-      <select id="gpu" aria-label="GPU"></select>
-    </section>
-
-    <section class="card">
       <h2>Mises à jour</h2>
       <p class="hint" id="upd">Recherche des mises à jour…</p>
       <div class="actions"><button id="check">Rechercher</button><button class="primary hide" id="doUpdate">Mettre à jour</button><button id="quit">Quitter l'application</button></div>
@@ -132,7 +126,7 @@ select option{color:#111}
 <script>
 const TOKEN="{{TOKEN}}";
 const $=s=>document.querySelector(s);
-let S=null, screens=[], gpu="", hotkey="", pendingKey="";
+let S=null, screens=[], hotkey="", pendingKey="";
 
 const api=async(p,b={})=>{
   const r=await fetch("/api/"+p,{method:"POST",headers:{"X-Token":TOKEN,"Content-Type":"application/json"},body:JSON.stringify(b)});
@@ -152,7 +146,7 @@ const setTheme=t=>{document.documentElement.setAttribute("data-hx",t);$("#theme"
 $("#theme").onclick=()=>setTheme(document.documentElement.getAttribute("data-hx")==="dark"?"light":"dark");
 try{setTheme(localStorage.getItem("hx")==="dark"?"dark":"light")}catch(e){setTheme("light")}
 
-const dirty=()=>JSON.stringify(screens)!==JSON.stringify(S.screens)||gpu!==S.gpu;
+const dirty=()=>JSON.stringify(screens)!==JSON.stringify(S.screens);
 
 function render(){
   $("#ver").textContent=S.version==="dev"?"version de développement":"v"+S.version.replace(/^v/,"");
@@ -174,8 +168,6 @@ function render(){
   if(!screens.length){box.innerHTML='<p class="hint" style="margin:0">Aucun écran virtuel.</p>'}
   $("#add").disabled=screens.length>=4;
   $("#apply").disabled=!dirty();
-  const g=$("#gpu");g.innerHTML='<option value="">Automatique (choix du pilote)</option>'+(S.gpus||[]).map(n=>`<option>${n.replace(/</g,"&lt;")}</option>`).join("");
-  g.value=gpu;
   const k=$("#key");
   k.innerHTML=pendingKey||hotkey?(pendingKey||hotkey).split("+").map(x=>`<kbd>${x}</kbd>`).join(""):"Aucun raccourci";
   $("#keySave").disabled=pendingKey===""||pendingKey===hotkey;
@@ -183,15 +175,14 @@ function render(){
 
 async function load(first){
   S=await api("state");
-  if(first||!dirty()){screens=[...S.screens];gpu=S.gpu}
+  if(first||!dirty()){screens=[...S.screens]}
   if(first){hotkey=S.hotkey}
   render();
 }
 
 $("#add").onclick=()=>{screens.push("1080");render()};
-$("#gpu").onchange=e=>{gpu=e.target.value;render()};
 $("#apply").onclick=async()=>{
-  try{await busy("Application des écrans…",()=>api("apply",{screens,gpu}));say($("#msg"),"Écrans appliqués.","ok");await load(true)}
+  try{await busy("Application des écrans…",()=>api("apply",{screens}));say($("#msg"),"Écrans appliqués.","ok");await load(true)}
   catch(e){report(e);say($("#msg"),e.message,"alert")}
 };
 $("#off").onclick=async()=>{

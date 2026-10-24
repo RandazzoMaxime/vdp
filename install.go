@@ -19,9 +19,9 @@ import (
 )
 
 const (
-	taskLogon = "PhantomDisplay"      // démarrage à l'ouverture de session, sans UAC
-	taskOpen  = "PhantomDisplay-Open" // lancé à la demande par le raccourci du menu Démarrer
-	uninstKey = `Software\Microsoft\Windows\CurrentVersion\Uninstall\PhantomDisplay`
+	taskLogon = "VDP"      // démarrage à l'ouverture de session, sans UAC
+	taskOpen  = "VDP-Open" // lancé à la demande par le raccourci du menu Démarrer
+	uninstKey = `Software\Microsoft\Windows\CurrentVersion\Uninstall\VDP`
 )
 
 func installDir() string   { return filepath.Join(os.Getenv("ProgramFiles"), appName) }
@@ -68,9 +68,11 @@ func install(silent bool) error {
 			time.Sleep(time.Second)
 		}
 	}
-	if err := installDriver(dir); err != nil {
+	ourDriver, err := installDriver()
+	if err != nil {
 		return fmt.Errorf("installation du pilote: %w", err)
 	}
+	removeLegacy()
 	exe := installedExe()
 	if out, err := hidden("schtasks", "/Create", "/F", "/TN", taskLogon, "/SC", "ONLOGON", "/RL", "HIGHEST", "/TR", fmt.Sprintf(`"%s" --background`, exe)).CombinedOutput(); err != nil {
 		return fmt.Errorf("tâche planifiée: %v: %s", err, out)
@@ -87,6 +89,9 @@ func install(silent bool) error {
 		return err
 	}
 	defer k.Close()
+	if ourDriver { // nous le désinstallerons ; un pilote déjà présent n'est jamais touché
+		k.SetDWordValue("ParsecInstalledByUs", 1)
+	}
 	k.SetStringValue("DisplayName", appName)
 	k.SetStringValue("DisplayVersion", version)
 	k.SetStringValue("Publisher", "Maxime")
@@ -108,15 +113,14 @@ func uninstall() error {
 	hidden("schtasks", "/Delete", "/F", "/TN", taskLogon).Run()
 	hidden("schtasks", "/Delete", "/F", "/TN", taskOpen).Run()
 	os.Remove(startMenuLink())
-	removeDevices()
-	infs, _ := filepath.Glob(filepath.Join(os.Getenv("windir"), "INF", "oem*.inf"))
-	for _, f := range infs {
-		if b, err := os.ReadFile(f); err == nil && strings.Contains(string(b), "MttVDD") {
-			hidden("pnputil", "/delete-driver", filepath.Base(f), "/uninstall", "/force").Run()
+	if k, err := registry.OpenKey(registry.LOCAL_MACHINE, uninstKey, registry.QUERY_VALUE); err == nil {
+		if v, _, _ := k.GetIntegerValue("ParsecInstalledByUs"); v == 1 {
+			uninstallDriver()
 		}
+		k.Close()
 	}
+	removeLegacy()
 	registry.DeleteKey(registry.LOCAL_MACHINE, uninstKey)
-	os.RemoveAll(vddDir)
 	// l'exe en cours d'exécution ne peut pas se supprimer lui-même
 	return exec.Command("cmd", "/c", fmt.Sprintf(`ping -n 3 127.0.0.1 >nul & rmdir /s /q "%s"`, installDir())).Start()
 }
@@ -206,7 +210,7 @@ func applyUpdate(r *release) error {
 	if f := strings.Fields(string(sum)); len(f) == 0 || !strings.EqualFold(f[0], hex.EncodeToString(got[:])) {
 		return fmt.Errorf("somme SHA-256 invalide, mise à jour refusée")
 	}
-	tmp, err := os.MkdirTemp("", "phantom-update")
+	tmp, err := os.MkdirTemp("", "vdp-update")
 	if err != nil {
 		return err
 	}

@@ -1,4 +1,4 @@
-// Phantom Display: écrans virtuels Windows pilotés depuis la zone de notification.
+// VDP: écrans virtuels Windows pilotés depuis la zone de notification.
 package main
 
 import (
@@ -17,15 +17,14 @@ import (
 var version = "dev" // injecté par -ldflags "-X main.version=…"
 
 const (
-	appName = "Phantom Display"
-	repo    = "RandazzoMaxime/phantom-display"
-	exeName = "phantom-display.exe"
+	appName = "VDP"
+	repo    = "RandazzoMaxime/vdp"
+	exeName = "vdp.exe"
 )
 
 type config struct {
 	Screens []string `json:"screens"` // identifiants de preset, un par écran
 	Hotkey  string   `json:"hotkey"`  // vide = aucun raccourci
-	GPU     string   `json:"gpu"`     // vide = choix du pilote
 }
 
 var (
@@ -34,7 +33,7 @@ var (
 )
 
 func dataDir() string {
-	d := filepath.Join(os.Getenv("LOCALAPPDATA"), "PhantomDisplay")
+	d := filepath.Join(os.Getenv("LOCALAPPDATA"), "VDP")
 	os.MkdirAll(d, 0o755)
 	return d
 }
@@ -100,7 +99,7 @@ func msgBox(title, text string) {
 
 func run(background bool) {
 	// Instance unique : la seconde instance demande à la première d'ouvrir sa fenêtre.
-	name, _ := windows.UTF16PtrFromString(`Global\PhantomDisplay`)
+	name, _ := windows.UTF16PtrFromString(`Global\VDP`)
 	if _, err := windows.CreateMutex(nil, false, name); err == windows.ERROR_ALREADY_EXISTS {
 		showExisting()
 		return
@@ -117,7 +116,7 @@ func run(background bool) {
 		}
 	}
 	if len(cfg.Screens) > 0 && driverPresent() {
-		go func() { log.Println("restauration:", applyScreens(cfg.Screens, cfg.GPU)) }()
+		go func() { log.Println("restauration:", applyScreens(cfg.Screens)) }()
 	}
 	if !background {
 		openUI()
