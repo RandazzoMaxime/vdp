@@ -260,6 +260,7 @@ var (
 	user32            = windows.NewLazySystemDLL("user32.dll")
 	procEnumDisplays  = user32.NewProc("EnumDisplayDevicesW")
 	procChangeDisplay = user32.NewProc("ChangeDisplaySettingsExW")
+	procEnumSettings  = user32.NewProc("EnumDisplaySettingsW")
 )
 
 type displayDevice struct {
@@ -306,7 +307,18 @@ func virtualDisplays() []string {
 	return out
 }
 
+// modeIs dit si l'écran affiche déjà p : évite un changement de mode (et son clignotement) inutile.
+func modeIs(name string, p preset) bool {
+	dm := devMode{Size: uint16(unsafe.Sizeof(devMode{}))}
+	n, _ := windows.UTF16PtrFromString(name)
+	r, _, _ := procEnumSettings.Call(uintptr(unsafe.Pointer(n)), 0xFFFFFFFF /* ENUM_CURRENT_SETTINGS */, uintptr(unsafe.Pointer(&dm)))
+	return r != 0 && dm.PelsWidth == uint32(p.W) && dm.PelsHeight == uint32(p.H)
+}
+
 func setMode(name string, p preset) error {
+	if modeIs(name, p) {
+		return nil
+	}
 	dm := devMode{Size: uint16(unsafe.Sizeof(devMode{})), Fields: dmPelsWH, PelsWidth: uint32(p.W), PelsHeight: uint32(p.H), DisplayFrequency: refreshRate}
 	n, _ := windows.UTF16PtrFromString(name)
 	r, _, _ := procChangeDisplay.Call(uintptr(unsafe.Pointer(n)), uintptr(unsafe.Pointer(&dm)), 0, 1 /* CDS_UPDATEREGISTRY */, 0)
@@ -340,17 +352,33 @@ func applyScreens(ids []string, gpu string) error {
 	if err := writeSettings(len(ids), gpu); err != nil {
 		return err
 	}
-	if err := setDeviceState(dicsEnable); err != nil {
-		return err
-	}
-	// SETDISPLAYCOUNT réécrit le nombre et recharge le pilote, qui relit résolutions et GPU.
-	if err := sendPipe(fmt.Sprintf("SETDISPLAYCOUNT %d", len(ids))); err != nil {
-		return err
-	}
+	cfgMu.Lock()
+	sameGPU := cfg.GPU == gpu
+	cfgMu.Unlock()
+	active := len(virtualDisplays())
+	switch {
+	case active == 0:
+		// pilote éteint : il démarre avec le fichier qu'on vient d'écrire, un seul chargement suffit
+		if err := setDeviceState(dicsEnable); err != nil {
+			return err
+		}
+	case active != len(ids) || !sameGPU:
+		// pilote actif : SETDISPLAYCOUNT le recharge, il relit nombre et GPU (les écrans clignotent)
+		if err := sendPipe(fmt.Sprintf("SETDISPLAYCOUNT %d", len(ids))); err != nil {
+			return err
+		}
+	} // sinon seule la résolution change : pas de rechargement
 	var names []string
-	for deadline := time.Now().Add(20 * time.Second); time.Now().Before(deadline); time.Sleep(400 * time.Millisecond) {
+	for start := time.Now(); time.Since(start) < 20*time.Second; time.Sleep(400 * time.Millisecond) {
 		if names = virtualDisplays(); len(names) == len(ids) {
 			break
+		}
+		if active == 0 && time.Since(start) > 6*time.Second && len(names) == 0 {
+			// déjà activé mais sans écran : on force le rechargement une fois
+			active = -1
+			if err := sendPipe(fmt.Sprintf("SETDISPLAYCOUNT %d", len(ids))); err != nil {
+				return err
+			}
 		}
 	}
 	if len(names) != len(ids) {

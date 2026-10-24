@@ -141,7 +141,11 @@ const api=async(p,b={})=>{
   return j.data;
 };
 const say=(el,t,cls)=>{el.textContent=t;el.className="msg "+(cls||"")};
-const busy=async(txt,fn)=>{$("#busyTxt").textContent=txt;$("#busy").classList.remove("hide");try{return await fn()}finally{$("#busy").classList.add("hide")}};
+let working=0;
+const busy=async(txt,fn)=>{working++;$("#busyTxt").textContent=txt;$("#busy").classList.remove("hide");try{return await fn()}finally{working--;$("#busy").classList.add("hide")}};
+// toute erreur de script part dans log.txt (la fenêtre n'a pas de console)
+const report=e=>api("log",{msg:String(e&&e.stack||e)}).catch(()=>{});
+addEventListener("error",e=>report(e.error||e.message));addEventListener("unhandledrejection",e=>report(e.reason));
 
 // thème : clair par défaut, jamais lu depuis le système
 const setTheme=t=>{document.documentElement.setAttribute("data-hx",t);$("#theme").setAttribute("aria-label",t==="dark"?"Passer en thème clair":"Passer en thème sombre");try{localStorage.setItem("hx",t)}catch(e){}};
@@ -188,11 +192,11 @@ $("#add").onclick=()=>{screens.push("1080");render()};
 $("#gpu").onchange=e=>{gpu=e.target.value;render()};
 $("#apply").onclick=async()=>{
   try{await busy("Application des écrans…",()=>api("apply",{screens,gpu}));say($("#msg"),"Écrans appliqués.","ok");await load(true)}
-  catch(e){say($("#msg"),e.message,"alert")}
+  catch(e){report(e);say($("#msg"),e.message,"alert")}
 };
 $("#off").onclick=async()=>{
   try{await busy("Désactivation…",()=>api("deactivate"));say($("#msg"),"Tous les écrans virtuels sont désactivés.","ok");await load(true)}
-  catch(e){say($("#msg"),e.message,"alert")}
+  catch(e){report(e);say($("#msg"),e.message,"alert")}
 };
 
 // raccourci : capture de la combinaison
@@ -235,7 +239,7 @@ $("#check").onclick=check;
 $("#doUpdate").onclick=async()=>{try{await busy("Téléchargement et installation…",()=>api("update/apply"))}catch(e){$("#upd").textContent=e.message}};
 
 load(true).then(()=>{if(S.installed)check()}).catch(e=>say($("#msg"),e.message,"alert"));
-setInterval(()=>load(false).catch(()=>{}),3000);
+setInterval(()=>{if(!working)load(false).catch(()=>{})},3000);
 </script>
 </body>
 </html>

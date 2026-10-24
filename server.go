@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -66,6 +67,7 @@ func api(w http.ResponseWriter, r *http.Request) {
 		Screens []string `json:"screens"`
 		GPU     string   `json:"gpu"`
 		Hotkey  string   `json:"hotkey"`
+		Msg     string   `json:"msg"`
 	}
 	json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&in)
 
@@ -74,6 +76,8 @@ func api(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 	case "/api/state":
 		out = state()
+	case "/api/log":
+		log.Println("ui:", in.Msg)
 	case "/api/show":
 		go openUI()
 	case "/api/apply":
