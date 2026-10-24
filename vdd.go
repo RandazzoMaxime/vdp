@@ -225,7 +225,7 @@ func installDriver(dir string) error {
 
 // gpuNames liste les cartes graphiques physiques (le pilote choisit celle qui rend les écrans virtuels).
 func gpuNames() []string {
-	var out []string
+	out := []string{}
 	eachDisplayDevice(func(dis windows.DevInfo, di *windows.DevInfoData) {
 		n := regString(dis, di, windows.SPDRP_DEVICEDESC)
 		l := strings.ToLower(n)

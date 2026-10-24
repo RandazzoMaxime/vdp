@@ -1,0 +1,6 @@
+[    1767ms] TypeError: Cannot set properties of null (setting 'textContent')
+    at render (http://127.0.0.1:8765/index.html:155:25)
+    at $.onclick (http://127.0.0.1:8765/index.html:188:45)
+[    2298ms] TypeError: Cannot set properties of null (setting 'textContent')
+    at render (http://127.0.0.1:8765/index.html:155:25)
+    at $.onclick (http://127.0.0.1:8765/index.html:188:45)
