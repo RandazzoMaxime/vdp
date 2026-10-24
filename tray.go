@@ -18,14 +18,22 @@ import (
 //go:embed assets/icon.ico
 var iconICO []byte
 
+// tr choisit le français si la langue d'affichage de Windows l'est, l'anglais sinon.
+func tr(fr, en string) string {
+	if id, _, _ := windows.NewLazySystemDLL("kernel32.dll").NewProc("GetUserDefaultUILanguage").Call(); id&0x3ff == 0x0c {
+		return fr
+	}
+	return en
+}
+
 func runTray() {
 	systray.Run(func() {
 		systray.SetIcon(iconICO)
 		systray.SetTooltip(appName)
-		open := systray.AddMenuItem("Ouvrir "+appName, "")
-		off := systray.AddMenuItem("Désactiver tous les écrans virtuels", "")
+		open := systray.AddMenuItem(tr("Ouvrir ", "Open ")+appName, "")
+		off := systray.AddMenuItem(tr("Désactiver tous les écrans virtuels", "Deactivate all virtual displays"), "")
 		systray.AddSeparator()
-		quit := systray.AddMenuItem("Quitter", "")
+		quit := systray.AddMenuItem(tr("Quitter", "Quit"), "")
 		systray.SetOnTapped(openUI)
 		go func() {
 			for {
