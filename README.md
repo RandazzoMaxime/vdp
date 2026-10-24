@@ -1,50 +1,50 @@
 # VDP — Virtual Display
 
-Ajoute et supprime des **écrans virtuels** Windows depuis la zone de notification.
-Utile quand tes écrans physiques sont éteints la nuit mais que tes benchs GPU ont besoin d'un écran « allumé » pour mesurer la vraie charge d'affichage.
+Add and remove Windows **virtual displays** from the notification area.
+Useful when your physical screens are off at night but your GPU benchmarks need a "lit" display to measure the real display load.
 
-- Résolutions : **1080p** (1920×1080), **4K** (3840×2160), **3440 wide** (3440×1440), à 60 Hz — par écran.
-- Ajout et retrait d'un écran à la fois, sans recharger le pilote (pas de gel de l'affichage).
-- **Raccourci global** (aucun par défaut) qui désactive tous les écrans virtuels.
-- Icône dans la zone de notification (flèche de la barre des tâches) : Ouvrir, Désactiver tous les écrans virtuels, Quitter.
-- Démarrage automatique avec Windows (sans invite UAC), mise à jour intégrée (SHA-256 vérifié).
+- Resolutions: **1080p** (1920×1080), **4K** (3840×2160), **3440 wide** (3440×1440), at 60 Hz — per display.
+- Add or remove one display at a time, without reloading the driver (no display freeze).
+- **Global shortcut** (none by default) that disables all virtual displays.
+- Notification area icon (taskbar arrow): Open, Disable all virtual displays, Quit.
+- Starts automatically with Windows (no UAC prompt), built-in updater (SHA-256 verified).
 
 ## Installation
 
-1. Télécharge `vdp.exe` depuis les [releases](https://github.com/RandazzoMaxime/vdp/releases/latest).
-2. Lance-le (invite UAC : l'installation d'un pilote exige les droits administrateur) puis clique **Installer**.
+1. Download `vdp.exe` from the [releases](https://github.com/RandazzoMaxime/vdp/releases/latest).
+2. Run it (UAC prompt: installing a driver requires administrator rights), then click **Install**.
 
-L'installateur est inclus dans l'exécutable : il copie l'app dans `C:\Program Files\VDP`, installe le
-pilote **Parsec Virtual Display Driver** s'il est absent, crée le démarrage automatique et l'entrée du menu Démarrer,
-et s'enregistre dans « Applications installées ».
+The installer is included in the executable: it copies the app to `C:\Program Files\VDP`, installs the
+**Parsec Virtual Display Driver** if it is missing, creates the automatic startup and the Start menu entry,
+and registers itself in "Installed apps".
 
-Le pilote Parsec (propriétaire, signé Parsec Cloud, Inc.) n'est pas embarqué : il est téléchargé chez Parsec
-(`builds.parsec.app`) à l'installation, puis vérifié par SHA-256. S'il est déjà présent, il est réutilisé et jamais désinstallé.
-L'ancien pilote MttVDD des versions 0.1.x est nettoyé.
+The Parsec driver (proprietary, signed by Parsec Cloud, Inc.) is not bundled: it is downloaded from Parsec
+(`builds.parsec.app`) during installation, then verified by SHA-256. If it is already present, it is reused and never uninstalled.
+The old MttVDD driver from versions 0.1.x is cleaned up.
 
-Windows SmartScreen peut avertir : l'exécutable n'est pas signé par un certificat de code.
+Windows SmartScreen may warn: the executable is not signed with a code-signing certificate.
 
-## Fonctionnement
+## How it works
 
-Le pilote est un *Indirect Display Driver* (IddCx). VDP lui envoie des `DeviceIoControl` (ajout, retrait, « ping » toutes les 100 ms),
-active le moniteur dans la topologie d'affichage (`SetDisplayConfig`) puis fixe sa résolution avec `ChangeDisplaySettingsEx`.
+The driver is an *Indirect Display Driver* (IddCx). VDP sends it `DeviceIoControl` calls (add, remove, a "ping" every 100 ms),
+activates the monitor in the display topology (`SetDisplayConfig`), then sets its resolution with `ChangeDisplaySettingsEx`.
 
-Le pilote retire les écrans dès que l'application cesse de le « pinger » : **les écrans virtuels n'existent que tant que VDP tourne**.
-Il reste donc dans la zone de notification et restaure tes écrans au démarrage.
+The driver removes the displays as soon as the application stops "pinging" it: **virtual displays only exist while VDP is running**.
+That is why VDP stays in the notification area and restores your displays at startup.
 
-## Compiler
+## Building
 
 ```
 go build -trimpath -ldflags "-s -w -H=windowsgui -X main.version=dev" -o vdp.exe .
 __COMPAT_LAYER=RunAsInvoker go test ./...
 ```
 
-Les ressources Windows (`rsrc_windows_amd64.syso`) sont générées avec `windres -O coff -i app.rc -o rsrc_windows_amd64.syso`.
+The Windows resources (`rsrc_windows_amd64.syso`) are generated with `windres -O coff -i app.rc -o rsrc_windows_amd64.syso`.
 
-## Désinstaller
+## Uninstalling
 
-« Applications installées » → VDP, ou `vdp.exe --uninstall`. Le pilote Parsec n'est retiré que s'il a été installé par VDP.
+"Installed apps" → VDP, or `vdp.exe --uninstall`. The Parsec driver is only removed if VDP installed it.
 
-## Licence
+## License
 
-MIT (le code de VDP). Le pilote Parsec reste soumis à sa propre licence.
+MIT (VDP's code). The Parsec driver remains subject to its own license.
